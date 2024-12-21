@@ -1,0 +1,516 @@
+#+title: Emacs Literate Configuration
+#+subtitle: Based on Minimal Emacs by JamesCherti
+#+author: Carlos Scarinci
+#+email: cscarinci@dgist.ac.kr
+#+startup: overview
+
+* Installation
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+#+begin_src shell
+cd ~
+git clone git@github.com:cscarinci/minimal-emacs.d.git .emacs.d
+git remote add upstream git@github.com:jamescherti/minimal-emacs.d.git
+
+git fetch upstream
+git merge upstream/main
+git push origin main
+#+end_src
+
+* Pre-Early-Init
+:PROPERTIES:
+:header-args: :tangle ./pre-early-init.el
+:END:
+** Header
+#+begin_src emacs-lisp
+;;; pre-early-init.el --- Early Setup -*- no-byte-compile: t; lexical-binding: t; -*-
+#+end_src
+** Garbage Collection and Clutter
+#+begin_src emacs-lisp
+
+;; Adjust garbage collection threshold for faster startup
+(setq minimal-emacs-gc-cons-threshold (* 64 1024 1024))
+
+;; Enable context menus, tool bars, menu bars, dialogs and tooltips.
+;; (setq minimal-emacs-ui-features '(context-menu tool-bar menu-bar dialogs tooltips))
+
+;; Reduce clutter in ~/.emacs.d by redirecting files to ~/emacs.d/var/
+(setq minimal-emacs-var-dir (expand-file-name "var/" minimal-emacs-user-directory))
+(setq package-user-dir (expand-file-name "elpa" minimal-emacs-var-dir))
+(setq user-emacs-directory minimal-emacs-var-dir)
+#+end_src
+
+* Post-Early-Init
+:PROPERTIES:
+:header-args: :tangle ./post-early-init.el
+:END:
+** Header
+#+begin_src emacs-lisp
+;;; post-early-init.el --- Early Configurations -*- no-byte-compile: t; lexical-binding: t; -*-
+#+end_src
+** Package
+#+begin_src emacs-lisp
+
+;; Initialize packages before init.el is loaded
+(setq minimal-emacs-package-initialize-and-refresh nil)
+
+;; Ignore "Unnecessary call to package-initialize in init file." warning
+(setq warning-suppres-types '((package)))
+
+(progn
+  (package-initialize)
+  (unless package-archive-contents
+    (package-refresh-contents))
+  (unless (package-installed-p 'use-package)
+    (package-install 'use-package))
+  (eval-when-compile
+    (require 'use-package)))
+#+end_src
+** Appearence
+#+begin_src emacs-lisp
+
+;; Set font
+;; (add-to-list 'default-frame-alist '(font . "JetBrains Mono-12"))
+
+;; Set theme
+;; (load-theme 'modus-operandi t)
+(use-package catppuccin-theme
+  :config (progn
+            (load-theme 'catppuccin :no-confirm))
+  :ensure t)
+
+;; Modeline
+(use-package doom-modeline
+  :config (progn 
+            (setq doom-modeline-buffer-file-name-style 'buffer-name)
+            (setq doom-modeline-project-detection 'project)
+            (setq doom-modeline-buffer-name t)
+            (setq doom-modeline-vcs-max-length 25)
+            (setq doom-modeline-icon nil))
+  :hook (after-init . doom-modeline-mode)
+  :ensure t)
+
+(use-package emacs
+  :ensure nil
+  :config
+  (progn
+    (set-display-table-slot standard-display-table 'vertical-border (make-glyph-code ?│))))
+#+end_src
+** Buffers and Messages
+#+begin_src emacs-lisp
+
+(use-package emacs
+  :config
+  (progn
+
+    ;; Scratch Buffer
+    (setq initial-major-mode 'org-mode)
+    (setq initial-scratch-message "#+title: Scratch Buffer\n\n#+begin_src emacs-lisp \n\n\n\n\n#+end_src")
+
+    ;; Suppress all messages
+    (setq-default inhibit-message t)
+
+    (defun my/skip-these-buffers (_window buffer _bury-or-kill)
+      "Function for `switch-to-prev-buffer-skip'."
+      (string-match "\\*[^*]+\\*" (buffer-name buffer)))
+    (setq switch-to-prev-buffer-skip 'my/skip-these-buffers))
+  :ensure nil)
+#+end_src
+
+* Pre-Init
+:PROPERTIES:
+:header-args: :tangle ./pre-init.el
+:END:
+** Header
+#+begin_src emacs-lisp
+;;; pre-init.el --- Setup -*- no-byte-compile: t; lexical-binding: t; -*-
+#+end_src
+
+** Hooks and Keybindings
+#+begin_src emacs-lisp
+
+(use-package emacs
+  :hook
+  ((prog-mode . display-line-numbers-mode)
+   (org-mode  . visual-line-mode))
+
+  :bind
+  (:map global-map            
+        ("C-z"     . undo-fu-only-undo)
+        ("C-_"     . undo-fu-only-redo)
+        ("C-S-z"   . nil)
+        ("C-x C-c" . nil)
+        ("C-x C-q" . save-buffers-kill-terminal)
+        ("M-;"     . comment-line))
+  :ensure nil)
+
+(use-package undo-fu
+  :commands (undo-fu-only-undo
+             undo-fu-only-redo
+             undo-fu-only-redo-all
+             undo-fu-disable-checkpoint)
+  :custom
+  ;; 3 times the default values
+  (undo-limit (* 3 160000))
+  (undo-strong-limit (* 3 240000))
+  :ensure t)
+
+(use-package undo-fu-session
+  :config
+  (undo-fu-session-global-mode)
+  :ensure t)
+#+end_src
+
+* Post-Init
+:PROPERTIES:
+:header-args: :tangle ./post-init.el
+:END:
+** Header
+#+begin_src emacs-lisp
+;;; post-init.el --- Configurations -*- no-byte-compile: t; lexical-binding: t; -*-
+#+end_src
+
+** Elisp compilation
+#+begin_src emacs-lisp
+
+;; Emacs Library Compilation
+(use-package compile-angel
+  :ensure t
+  :demand t
+  :config
+  (compile-angel-on-load-mode)
+  (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
+
+;; Ensure Emacs loads the most recent byte-compiled files.
+(setq load-prefer-newer t)
+
+;; Ensure JIT compilation is enabled for improved performance by
+;; native-compiling loaded .elc files asynchronously
+(setq native-comp-jit-compilation t)
+(setq native-comp-deferred-compilation t) ; Deprecated in Emacs > 29.1
+#+end_src
+
+** Emacs history
+#+begin_src emacs-lisp
+
+;; Auto-revert in Emacs is a feature that automatically updates the
+;; contents of a buffer to reflect changes made to the underlying file
+;; on disk.
+(add-hook 'after-init-hook #'global-auto-revert-mode)
+#+end_src
+#+begin_src emacs-lisp
+
+;; recentf is an Emacs package that maintains a list of recently
+;; accessed files, making it easier to reopen files you have worked on
+;; recently.
+(progn
+  (setq recentf-auto-cleanup nil))
+(add-hook 'after-init-hook #'recentf-mode)
+;; TODO Fix issues with startup messages
+#+end_src
+#+begin_src emacs-lisp
+
+;; savehist is an Emacs feature that preserves the minibuffer history between
+;; sessions. It saves the history of inputs in the minibuffer, such as commands,
+;; search strings, and other prompts, to a file. This allows users to retain
+;; their minibuffer history across Emacs restarts.
+(add-hook 'after-init-hook #'savehist-mode)
+#+end_src
+#+begin_src emacs-lisp
+
+;; save-place-mode enables Emacs to remember the last location within a file
+;; upon reopening. This feature is particularly beneficial for resuming work at
+;; the precise point where you previously left off.
+(add-hook 'after-init-hook #'save-place-mode)
+#+end_src
+
+** Misc 
+#+begin_src emacs-lisp
+
+;; Hide warnings and display only errors
+(setq warning-minimum-level :error)
+
+(setq pixel-scroll-precision-use-momentum nil)
+(pixel-scroll-precision-mode 1)
+
+(global-hl-line-mode 1)
+(set-face-attribute 'hl-line nil :inherit nil :background "#313244")
+(display-time-mode)
+(show-paren-mode +1)            ; Paren match highlighting
+(winner-mode 1)
+(delete-selection-mode 1)       ; Replace selected text with typed text
+(pixel-scroll-precision-mode 1)
+
+;; Configure Emacs to ask for confirmation before exiting
+;; (setq confirm-kill-emacs 'y-or-n-p)
+(setq confirm-kill-emacs nil)
+
+;; Window dividers
+(add-hook 'after-init-hook #'window-divider-mode)
+
+;; Buffer names
+(use-package uniquify
+  :custom
+  (uniquify-buffer-name-style 'forward)
+  (uniquify-separator "•")
+  (uniquify-after-kill-buffer-p t)
+  (uniquify-ignore-buffers-re "^\\*")
+  :ensure nil)
+
+;; Which-key
+;; (use-package which-key
+;;   :config
+;;   (which-key-mode)
+;;   :ensure t)
+
+(defun my/display-startup-time ()
+  (message "Emacs loaded in %s with %d garbage collections."
+           (format "%.2f seconds"
+                   (float-time
+                    (time-subtract after-init-time before-init-time)))
+           gcs-done))
+
+(add-hook 'emacs-startup-hook #'my/display-startup-time)
+#+end_src
+
+** Rainbows
+#+begin_src emacs-lisp
+
+;; Rainbow
+(use-package rainbow-mode
+  :hook ((prog-mode . rainbow-mode)
+         (org-mode . rainbow-mode))
+  :ensure t)
+
+(use-package rainbow-delimiters
+  :hook (after-init . rainbow-delimiters-mode)
+  :ensure t)
+#+end_src
+
+** Completion
+#+begin_src emacs-lisp
+
+(use-package vertico
+  :hook (after-init . vertico-mode)
+  :commands vertico-mode
+  :defer t
+  :ensure t)
+
+(use-package orderless
+  :after vertico
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles partial-completion))))
+  :ensure t)
+
+(use-package marginalia
+  :hook (after-init . marginalia-mode)
+  :commands (marginalia-mode marginalia-cycle)
+  :defer t
+  :ensure t)
+
+(use-package consult
+  :bind (:map global-map
+		      ("C-s"     . consult-line)
+		      ("C-x C-b" . consult-buffer)
+		      ("C-x C-r" . consult-recent-file))
+  :ensure t)
+
+(use-package company
+  :hook (after-init . global-company-mode)
+  :ensure t)
+
+#+end_src
+
+** Org
+#+begin_src emacs-lisp
+(use-package org
+  :config
+  (defun my/org-babel-tangle-config ()
+    (when (string-equal (buffer-file-name)
+			            (expand-file-name "~/.emacs.d/config.org"))
+      (let ((org-config-babel-evaluate nil))
+	    (org-babel-tangle))))
+  
+  (add-hook 'org-mode-hook
+	        (lambda ()
+	          (add-hook 'after-save-hook #'my/org-babel-tangle-config))))
+
+(use-package org
+  :config
+  (setq org-src-fontify-natively t
+        org-src-tab-acts-natively t
+        org-edit-src-content-indentation 0
+        org-support-shift-select t
+        org-startup-indented t)
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (shell . t)
+     (latex . t)
+     ;; (matlab . t)
+     (python . t)))
+
+  (defun my/org-faces ()
+    (set-face-attribute 'org-document-title nil :height 1.2)
+    (set-face-attribute 'org-document-info nil :height 1.0)
+    (set-face-attribute 'org-document-info-keyword nil :height 1.0)
+    (set-face-attribute 'org-block nil :height 1.0)
+    (set-face-attribute 'org-tag nil :height 1.0)
+    (set-face-attribute 'org-todo nil :height 1.0)
+    (set-face-attribute 'org-done nil :height 1.0)
+    (set-face-attribute 'org-priority nil :height 1.0)
+    (set-face-attribute 'org-tag nil :height 0.8)
+    (set-face-attribute 'org-level-1 nil :height 1.5)
+    (set-face-attribute 'org-level-2 nil :height 1.4)
+    (set-face-attribute 'org-level-3 nil :height 1.3)
+    (set-face-attribute 'org-level-4 nil :height 1.2)
+    (set-face-attribute 'org-level-5 nil :height 1.1)
+    (set-face-attribute 'org-level-6 nil :height 1.0))
+
+  (add-hook 'org-mode-hook #'my/org-faces))
+#+end_src
+
+** Org-LaTeX
+#+begin_src emacs-lisp
+
+(use-package org
+  :config
+  (setq
+   org-latex-listings t
+   org-latex-with-hyperref nil
+   org-latex-pdf-process
+   '("pdflatex %f"
+     "biber %b"
+     "pdflatex %f"
+     "pdflatex %f")
+   org-highlight-latex-and-related '(native script entities))
+
+  (with-eval-after-load 'ox-latex
+
+    (defun org-latex-example-block (example-block _contents info)
+	  "Override EXAMPLE-BLOCK element in ox-latex."
+	  (when (org-string-nw-p (org-element-property :value example-block))
+	    (let ((environment (or (org-export-read-attribute
+				                :attr_latex example-block :environment)
+				               "example")))
+	      (org-latex--wrap-label
+	       example-block
+	       (format "\\begin{%s}\n%s\\end{%s}"
+		           environment
+		           (org-export-format-code-default example-block info)
+		           environment)
+	       info))))
+
+    (defun my/org-add-latex-class (name class &rest levels)
+	  "Add a new LaTeX class to `org-latex-classes` with NAME, CLASS, and LEVELS."
+	  (let ((class-entry
+		     `(,name
+		       ,(format "\\documentclass{%s}
+			   [NO-DEFAULT-PACKAGES]
+			   [PACKAGES]
+			   [EXTRA]" class)
+		       ,@(mapcar (lambda (level)
+			               `(,(format "\\%s{%%s}" level) . ,(format "\\%s*{%%s}" level)))
+			             levels))))
+	    (add-to-list 'org-latex-classes class-entry)))
+
+    (defun my/org-get-headline-string-element  (headline backend info)
+	  (let ((prop-point (next-property-change 0 headline)))
+	    (if prop-point (plist-get (text-properties-at prop-point headline) :parent))))
+
+    (defun my/org-add-latex-export-filter (tag command)
+	  (let ((func-name (intern (concat "my/org-latex-export-filter-" tag))))
+	    (fset func-name
+		      `(lambda (headline backend info)
+		         (when (org-export-derived-backend-p backend 'latex)
+		           (let ((elmnt (my/org-get-headline-string-element headline backend info)))
+			         (when (member ,tag (org-element-property :tags elmnt))
+			           (concat ,command headline))))))
+	    (add-to-list 'org-export-filter-headline-functions func-name)))
+
+    (my/org-add-latex-class "kaobook" "kaobook" "chapter" "section" "subsection")
+    (my/org-add-latex-class "kaoparts" "kaobook" "addpart" "chapter" "section" "subsection")
+    (my/org-add-latex-class "kaohandt" "kaohandt"  "section" "subsection")
+    (my/org-add-latex-class "exam" "exam"  "section" "subsection")
+    (my/org-add-latex-export-filter "newpage" "\\newpage\n")
+    (my/org-add-latex-export-filter "frontmatter" "\\frontmatter\n")
+    (my/org-add-latex-export-filter "mainmatter" "\\mainmatter\n")
+    (my/org-add-latex-export-filter "backmatter" "\\backmatter\n")
+    (my/org-add-latex-export-filter "appendix" "\\appendix\n")
+    (my/org-add-latex-export-filter "chap_plain" "\\setchapterstyle{plain}\n")
+    (my/org-add-latex-export-filter "chap_bar" "\\setchapterstyle{bar}\n")
+    (my/org-add-latex-export-filter "chap_lines" "\\setchapterstyle{lines}\n")
+    (my/org-add-latex-export-filter "chap_kao" "\\setchapterstyle{kao}\n")
+    (my/org-add-latex-export-filter "chap_lecture" "\\setchapterstyle{lecture}\n")
+    (my/org-add-latex-export-filter "page_wide" "\\pagelayout{wide}\n")
+    (my/org-add-latex-export-filter "page_margin" "\\pagelayout{margin}\n")
+    (my/org-add-latex-export-filter "margintoc" "\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "head_plain" "\\pagestyle{plain.scrheadings}\n")
+    (my/org-add-latex-export-filter "end" "\\end{document}\n")))
+
+(use-package org-tempo
+  :config (setq org-structure-template-alist
+		        '(("src" . "src")
+		          ("el"  . "src emacs-lisp")
+		          ("py"  . "src python")
+                  ("py"  . "src python")
+                  ("ipy" . "src ipython")
+		          ("tex" . "src latex")
+
+		          ("abstract"    . "abstract")
+
+                  ("conjecture"  . "conjecture")
+		          ("problem"     . "problem")
+		          ("question"    . "question")
+
+                  ("corollary"   . "corollary")
+		          ("definition"  . "definition")
+		          ("lemma"       . "lemma")
+		          ("proposition" . "proposition")
+		          ("theorem"     . "theorem")
+                  
+		          ("example"     . "example")
+		          ("exercise"    . "exercise")
+                  ("note"        . "note")
+		          ("remark"      . "remark")
+
+                  ("proof"       . "proof")
+		          ("solution"    . "solution")
+
+		          ("questions"   . "questions")
+		          ("parts"       . "parts")
+
+		          ("center"      . "center")))
+  :after org
+  :ensure nil)
+
+(use-package org-modern
+  :hook (org-mode . org-modern-mode)
+  :config (setq org-modern-fold-stars
+                '(("◉" . "◉")
+                  ("○" . "○")
+                  ("●" . "●")
+                  ("◈" . "◈")
+                  ("◇" . "◇")
+                  ("◆" . "◆")
+                  ("•" . "•")))
+  :ensure t)
+#+end_src
+** Padding
+#+begin_src emacs-lisp
+(use-package spacious-padding
+  :hook (after-init . spacious-padding-mode)
+  :custom
+  (spacious-padding-widths
+   '( :internal-border-width 15
+      :header-line-width 4
+      :mode-line-width 6
+      :tab-width 4
+      :right-divider-width 1
+      :scroll-bar-width 8
+      :fringe-width 8))
+  :ensure t)
+#+end_src
