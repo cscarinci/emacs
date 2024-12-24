@@ -39,6 +39,7 @@ git push origin main
 (setq minimal-emacs-var-dir (expand-file-name "var/" minimal-emacs-user-directory))
 (setq package-user-dir (expand-file-name "elpa" minimal-emacs-var-dir))
 (setq user-emacs-directory minimal-emacs-var-dir)
+
 #+end_src
 
 * Post-Early-Init
@@ -72,6 +73,10 @@ git push origin main
 
 ;; Set font
 ;; (add-to-list 'default-frame-alist '(font . "JetBrains Mono-12"))
+
+(use-package auto-dark
+  :init (auto-dark-mode)
+  :ensure t)
 
 ;; Set theme
 ;; (load-theme 'modus-operandi t)
@@ -126,7 +131,24 @@ git push origin main
 #+begin_src emacs-lisp
 ;;; pre-init.el --- Setup -*- no-byte-compile: t; lexical-binding: t; -*-
 #+end_src
-
+** Straight
+#+begin_src emacs-lisp
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+end_src
 ** Hooks and Keybindings
 #+begin_src emacs-lisp
 
@@ -324,7 +346,7 @@ git push origin main
 
 #+end_src
 
-** Org
+** org
 #+begin_src emacs-lisp
 (use-package org
   :config
@@ -373,7 +395,7 @@ git push origin main
   (add-hook 'org-mode-hook #'my/org-faces))
 #+end_src
 
-** Org-LaTeX
+** org-latex
 #+begin_src emacs-lisp
 
 (use-package org
@@ -386,8 +408,9 @@ git push origin main
      "biber %b"
      "pdflatex %f"
      "pdflatex %f")
-   org-highlight-latex-and-related '(native script entities))
-
+   org-highlight-latex-and-related '(native script entities)
+   org-tags-column 0)
+ 
   (with-eval-after-load 'ox-latex
 
     (defun org-latex-example-block (example-block _contents info)
@@ -431,33 +454,74 @@ git push origin main
 			           (concat ,command headline))))))
 	    (add-to-list 'org-export-filter-headline-functions func-name)))
 
-    (my/org-add-latex-class "kaobook" "kaobook" "chapter" "section" "subsection")
-    (my/org-add-latex-class "kaoparts" "kaobook" "addpart" "chapter" "section" "subsection")
-    (my/org-add-latex-class "kaohandt" "kaohandt"  "section" "subsection")
-    (my/org-add-latex-class "exam" "exam"  "section" "subsection")
-    (my/org-add-latex-export-filter "newpage" "\\newpage\n")
-    (my/org-add-latex-export-filter "frontmatter" "\\frontmatter\n")
-    (my/org-add-latex-export-filter "mainmatter" "\\mainmatter\n")
-    (my/org-add-latex-export-filter "backmatter" "\\backmatter\n")
-    (my/org-add-latex-export-filter "appendix" "\\appendix\n")
-    (my/org-add-latex-export-filter "chap_plain" "\\setchapterstyle{plain}\n")
-    (my/org-add-latex-export-filter "chap_bar" "\\setchapterstyle{bar}\n")
-    (my/org-add-latex-export-filter "chap_lines" "\\setchapterstyle{lines}\n")
-    (my/org-add-latex-export-filter "chap_kao" "\\setchapterstyle{kao}\n")
-    (my/org-add-latex-export-filter "chap_lecture" "\\setchapterstyle{lecture}\n")
-    (my/org-add-latex-export-filter "page_wide" "\\pagelayout{wide}\n")
-    (my/org-add-latex-export-filter "page_margin" "\\pagelayout{margin}\n")
-    (my/org-add-latex-export-filter "margintoc" "\\setchapterpreamble[u]{\\margintoc}\n")
-    (my/org-add-latex-export-filter "head_plain" "\\pagestyle{plain.scrheadings}\n")
-    (my/org-add-latex-export-filter "end" "\\end{document}\n")))
+    (my/org-add-latex-class "kaobook"  "kaobook"  "chapter" "section" "subsection")
+    (my/org-add-latex-class "kaoparts" "kaobook"  "addpart" "chapter" "section" "subsection")
+    (my/org-add-latex-class "kaohandt" "kaohandt" "section" "subsection")
+    (my/org-add-latex-class "exam"     "exam"     "section" "subsection")
+    
+    (my/org-add-latex-export-filter "newpage"     "\\newpage\n")
 
+    (my/org-add-latex-export-filter "frontmatter" "\\frontmatter\n")
+    (my/org-add-latex-export-filter "mainmatter"  "\\mainmatter\n")
+    (my/org-add-latex-export-filter "backmatter"  "\\backmatter\n")
+    (my/org-add-latex-export-filter "appendix"    "\\appendix\n")
+    
+    (my/org-add-latex-export-filter "chap_plain"  "\\setchapterstyle{plain}\n")
+    (my/org-add-latex-export-filter "chap_bar"    "\\setchapterstyle{bar}\n")
+    (my/org-add-latex-export-filter "chap_lines"  "\\setchapterstyle{lines}\n")
+    (my/org-add-latex-export-filter "chap_kao"    "\\setchapterstyle{kao}\n")
+    (my/org-add-latex-export-filter "chap_lect"   "\\setchapterstyle{lecture}\n")
+    (my/org-add-latex-export-filter "margintoc"   "\\setchapterpreamble[u]{\\margintoc}\n")
+
+    (my/org-add-latex-export-filter "L01" "\\renewcommand{\\thechapter}{L01}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L02" "\\renewcommand{\\thechapter}{L02}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L03" "\\renewcommand{\\thechapter}{L03}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L04" "\\renewcommand{\\thechapter}{L04}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L05" "\\renewcommand{\\thechapter}{L05}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L06" "\\renewcommand{\\thechapter}{L06}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L07" "\\renewcommand{\\thechapter}{L07}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L08" "\\renewcommand{\\thechapter}{L08}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L09" "\\renewcommand{\\thechapter}{L09}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L10" "\\renewcommand{\\thechapter}{L10}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L11" "\\renewcommand{\\thechapter}{L11}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L12" "\\renewcommand{\\thechapter}{L12}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L13" "\\renewcommand{\\thechapter}{L13}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L14" "\\renewcommand{\\thechapter}{L14}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L15" "\\renewcommand{\\thechapter}{L15}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L16" "\\renewcommand{\\thechapter}{L16}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L17" "\\renewcommand{\\thechapter}{L17}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L18" "\\renewcommand{\\thechapter}{L18}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L19" "\\renewcommand{\\thechapter}{L19}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L20" "\\renewcommand{\\thechapter}{L20}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L21" "\\renewcommand{\\thechapter}{L21}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L22" "\\renewcommand{\\thechapter}{L22}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L23" "\\renewcommand{\\thechapter}{L23}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L24" "\\renewcommand{\\thechapter}{L24}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L25" "\\renewcommand{\\thechapter}{L25}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L26" "\\renewcommand{\\thechapter}{L26}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L27" "\\renewcommand{\\thechapter}{L27}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L28" "\\renewcommand{\\thechapter}{L28}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L29" "\\renewcommand{\\thechapter}{L29}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L30" "\\renewcommand{\\thechapter}{L30}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L31" "\\renewcommand{\\thechapter}{L31}\n\\setchapterpreamble[u]{\\margintoc}\n")
+    (my/org-add-latex-export-filter "L32" "\\renewcommand{\\thechapter}{L32}\n\\setchapterpreamble[u]{\\margintoc}\n")
+
+
+        
+    (my/org-add-latex-export-filter "page_wide"   "\\pagelayout{wide}\n")
+    (my/org-add-latex-export-filter "page_margin" "\\pagelayout{margin}\n")
+
+    (my/org-add-latex-export-filter "head_plain"  "\\pagestyle{plain.scrheadings}\n")
+    
+    (my/org-add-latex-export-filter "end"         "\\end{document}\n")))
+    #+end_src
+** org-tempo
+#+begin_src emacs-lisp
 (use-package org-tempo
   :config (setq org-structure-template-alist
 		        '(("src" . "src")
 		          ("el"  . "src emacs-lisp")
 		          ("py"  . "src python")
-                  ("py"  . "src python")
-                  ("ipy" . "src ipython")
 		          ("tex" . "src latex")
 
 		          ("abstract"    . "abstract")
@@ -486,7 +550,9 @@ git push origin main
 		          ("center"      . "center")))
   :after org
   :ensure nil)
-
+#+end_src
+** org-modern
+#+begin_src emacs-lisp  
 (use-package org-modern
   :hook (org-mode . org-modern-mode)
   :config (setq org-modern-fold-stars
@@ -497,6 +563,22 @@ git push origin main
                   ("◇" . "◇")
                   ("◆" . "◆")
                   ("•" . "•")))
+  :ensure t)
+#+end_src
+** phscroll
+#+begin_src emacs-lisp
+(use-package phscroll
+  :straight (:host github :repo "misohena/phscroll")
+  :commands (org-phscroll-mode)
+  :config
+  (with-eval-after-load 'org
+    (require 'org-phscroll))
+  :hook(org-mode . org-phscroll-mode)
+  :ensure t)
+#+end_src
+** magit
+#+begin_src emacs-lisp  
+(use-package magit
   :ensure t)
 #+end_src
 ** Padding
