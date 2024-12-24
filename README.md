@@ -1,4 +1,4 @@
-# Minimal ~/.emacs.d - Vanilla Emacs Configuration with Better Defaults and Optimized Startup
+# minimal-emacs.d - Emacs Configuration with Better Defaults and Optimized Startup
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![](https://raw.githubusercontent.com/jamescherti/minimal-emacs.d/main/.images/made-for-gnu-emacs.svg)
 
@@ -16,7 +16,7 @@ The author is using **[minimal-emacs.d](https://github.com/jamescherti/minimal-e
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 ## Table of Contents
 
-- [Minimal ~/.emacs.d - Vanilla Emacs Configuration with Better Defaults and Optimized Startup](#minimal-emacsd---vanilla-emacs-configuration-with-better-defaults-and-optimized-startup)
+- [minimal-emacs.d - Emacs Configuration with Better Defaults and Optimized Startup](#minimal-emacsd---emacs-configuration-with-better-defaults-and-optimized-startup)
   - [Install minimal-emacs.d](#install-minimal-emacsd)
     - [Install minimal-emacs.d into `~/.emacs.d`](#install-minimal-emacsd-into-emacsd)
     - [Alternative: Install minimal-emacs.d into `~/.minimal-emacs.d`](#alternative-install-minimal-emacsd-into-minimal-emacsd)
@@ -139,18 +139,6 @@ To install compile-angel, add the following code **at the very beginning of your
   (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
 ```
 
-It is also highly recommended to set the following variables **at the very beginning of your post-init.el**:
-
-``` emacs-lisp
-;; Ensure Emacs loads the most recent byte-compiled files.
-(setq load-prefer-newer t)
-
-;; Ensure JIT compilation is enabled for improved performance by
-;; native-compiling loaded .elc files asynchronously
-(setq native-comp-jit-compilation t)
-(setq native-comp-deferred-compilation t) ; Deprecated in Emacs > 29.1
-```
-
 ### Reducing clutter in `~/.emacs.d` by redirecting files to `~/emacs.d/var/`
 
 Emacs, by default, stores various configuration files, caches, backups, and other data in the `~/.emacs.d` directory. Over time, this directory can become cluttered with numerous files, making it difficult to manage and maintain.
@@ -158,7 +146,7 @@ Emacs, by default, stores various configuration files, caches, backups, and othe
 One common solution to this issue is the installation of the no-littering package, which reduces clutter in the `~/.emacs.d` directory.
 
 However, an alternative lightweight approach is to simply change the default `~/.emacs.d` directory to `~/.emacs.d/var/`, which will contain all the files that Emacs typically stores in the base directory. This can be accomplished by adding the following code to `~/.emacs.d/pre-early-init.el`:
-```
+``` emacs-lisp
 ;; Reducing clutter in ~/.emacs.d by redirecting files to ~/emacs.d/var/
 (setq minimal-emacs-var-dir (expand-file-name "var/" minimal-emacs-user-directory))
 (setq package-user-dir (expand-file-name "elpa" minimal-emacs-var-dir))
@@ -166,7 +154,7 @@ However, an alternative lightweight approach is to simply change the default `~/
 ```
 
 To prevent Emacs from saving customization information to a custom file, set `custom-file` to `null-device`:
-```
+``` emacs-lisp
 (setq custom-file null-device)
 ```
 
