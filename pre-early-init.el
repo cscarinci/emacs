@@ -13,6 +13,8 @@
 
 (add-hook 'emacs-startup-hook #'display-startup-time 100)
 
+(provide 'pre-early-init)
+
 ;; Local variables:
 ;; byte-compile-warnings: (not obsolete free-vars)
 ;; End:
