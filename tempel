@@ -1,0 +1,43 @@
+fundamental-mode
+
+(today (format-time-string "%Y-%m-%d"))
+
+org-mode
+
+(title "#+title: " p n "#+author: Carlos Scarinci")
+(src "#+begin_src " p n r n "#+end_src")
+(el "#+begin_src elisp" n r n "#+end_src")
+(latex "#+begin_src latex" n r n "#+end_src")
+(part "* P" p " " (s PART) n> "#+begin_src latex :comments link :tangle body.tex" n> "\\part{"PART"}" n> "#+end_src\n")
+(chapter "** C" p " " (s CHAPTER) n> "#+begin_src latex :comments link :tangle body.tex" n> "\\chapter{"CHAPTER"}" n> "#+end_src\n")
+(section "*** S" p " " (s SECTION) n> "#+begin_src latex :comments link :tangle body.tex" n> "\\section{"SECTION"}" n> "#+end_src\n")
+(content "**** " p n> "#+begin_src latex :comments link :tangle body.tex" n> q n> "#+end_src\n")
+(abs "\\begin{abstract}\n" r> n> "\\end{abstract}")
+(align "\\begin{align}\n" r> n "\\end{align}")
+(align* "\\begin{align*}\n" r> n "\\end{align*}")
+(center "\\begin{center}\n" r> n "\\end{center}")
+(itemize "\\begin{itemize}\n\\item " r> n "\\end{itemize}")
+(enumerate "\\begin{enumerate}\n\\item " r> n "\\end{enumerate}")
+(minipage "\\begin{minipage}[t]{0.5\\textwidth}\n" r> n "\\end{minipage}")
+(frac "\\frac{" p "}{" q "}")
+(dfn "\\begin{definition}[" (s definition) "]" n r> n "\\end{definition}")
+(thm "\\begin{theorem}[" (s theorem) "]" n r> n "\\end{theorem}")
+(prp "\\begin{proposition}[" (s proposition) "]" n r> n "\\end{proposition}")
+(lem "\\begin{lemma}[" (s lemma) "]" n r> n "\\end{lemma}")
+(exm "\\begin{example}[" (s example) "]" n r> n "\\end{example}")
+(exr "\\begin{exercise}[" (s exercise) "]" n r> n "\\end{exercise}")
+(rmk "\\begin{remark}[" (s remark) "]" n r> n "\\end{remark}")
+(cor "\\begin{corollary}[" (s corollary) "]" n r> n "\\end{corollary}")
+(clm "\\begin{claim}[" (s claim) "]" n r> n "\\end{claim}")
+(cnj "\\begin{conjecture}[" (s conjecture) "]" n r> n "\\end{conjecture}")
+(prf "\\begin{proof}" n r> n "\\end{proof}")
+(sol "\\begin{solution}" n r> n "\\end{solution}")
+(qst "\\begin{question}" n r> n "\\end{question}")
+(axm "\\begin{axiom}[" (s axiom) "]" n r> n "\\end{axiom}")
+(obs "\\begin{observation}[" (s observation) "]" n r> n "\\end{observation}")
+
+
+;; Local Variables:
+;; mode: lisp-data
+;; outline-regexp: "[a-z]"
+;; End:
