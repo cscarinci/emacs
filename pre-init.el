@@ -1,4 +1,4 @@
-;;; pre-init.el -*- no-byte-compile: t; lexical-binding: t; -*-
+;;; pre-init.el -*- lexical-binding: t; -*-
 
 (use-package modus-themes
   :ensure nil

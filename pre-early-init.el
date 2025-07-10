@@ -1,4 +1,4 @@
-;;; pre-early-init.el -*- no-byte-compile: t; lexical-binding: t; -*-
+;;; pre-early-init.el -*- lexical-binding: t; -*-
 
 (setq minimal-emacs-var-dir (expand-file-name ".var/" minimal-emacs-user-directory))
 (setq package-user-dir (expand-file-name "elpa" minimal-emacs-var-dir))
