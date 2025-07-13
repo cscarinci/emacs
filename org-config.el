@@ -1,4 +1,4 @@
-;;; org-config.el -*- lexical-binding: t; -*-
+;;; org-config.el -*- no-byte-compile: t; lexical-binding: t; -*-
 
 (use-package org
   :mode ("\\.org\\'" . org-mode)
@@ -120,9 +120,5 @@
   )
 
 (provide 'org-config)
-
-;; Local variables:
-;; byte-compile-warnings: (not obsolete free-vars)
-;; End:
 
 ;;; post-init.el ends here

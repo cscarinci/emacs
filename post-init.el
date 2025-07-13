@@ -1,4 +1,4 @@
-;;; post-init.el -*- lexical-binding: t; -*-
+;;; post-init.el -*- no-byte-compile: t; lexical-binding: t; -*-
 
 (use-package server
   :ensure nil
@@ -6,6 +6,7 @@
   (unless (server-running-p)
     (server-start)))
 
+(add-hook 'after-init-hook #'lost-selection-mode)
 (add-hook 'after-init-hook #'global-auto-revert-mode)
 (add-hook 'after-init-hook #'savehist-mode)
 (add-hook 'after-init-hook #'save-place-mode)
@@ -50,6 +51,150 @@
   :config
   (which-key-mode))
 
+;;; DIRED
+(use-package dired
+  :ensure nil
+  :bind
+  (("M-i" . emacs-solo/window-dired-vc-root-left))
+  :custom
+  (dired-dwim-target t)
+  (dired-guess-shell-alist-user
+   '(("\\.\\(png\\|jpe?g\\|tiff\\)" "feh" "xdg-open" "open")
+     ("\\.\\(mp[34]\\|m4a\\|ogg\\|flac\\|webm\\|mkv\\)" "mpv" "xdg-open" "open")
+     (".*" "xdg-open" "open")))
+  (dired-kill-when-opening-new-dired-buffer t)
+  (dired-listing-switches "-alh --group-directories-first")
+  (dired-omit-files "^\\.")                                ; with dired-omit-mode (C-x M-o)
+  (dired-hide-details-hide-absolute-location t)            ; EMACS-31
+  :init
+  (add-hook 'dired-mode-hook (lambda () (dired-omit-mode 1))) ;; Turning this ON also sets the C-x M-o binding.
+
+  (defun emacs-solo/dired-rsync-copy (dest)
+    "Copy marked files in Dired to DEST using rsync async, with real-time processing of output."
+    (interactive
+     (list (expand-file-name (read-file-name "rsync to: "
+                                             (dired-dwim-target-directory)))))
+    (let* ((files (dired-get-marked-files nil current-prefix-arg))
+           (dest-original dest)
+           (dest-rsync
+            (if (file-remote-p dest)
+                (let ((vec (tramp-dissect-file-name dest)))
+                  (concat (tramp-file-name-user vec)
+                          "@"
+                          (tramp-file-name-host vec)
+                          ":"
+                          (tramp-file-name-localname vec)))
+              dest))
+           (files-rsync
+            (mapcar
+             (lambda (f)
+               (if (file-remote-p f)
+                   (let ((vec (tramp-dissect-file-name f)))
+                     (concat (tramp-file-name-user vec)
+                             "@"
+                             (tramp-file-name-host vec)
+                             ":"
+                             (tramp-file-name-localname vec)))
+                 f))
+             files))
+           (command (append '("rsync" "-hPur") files-rsync (list dest-rsync)))
+           (buffer (get-buffer-create "*rsync*")))
+
+      (message "[rsync] original dest: %s" dest-original)
+      (message "[rsync] converted dest: %s" dest-rsync)
+      (message "[rsync] source files: %s" files-rsync)
+      (message "[rsync] command: %s" (string-join command " "))
+
+      (with-current-buffer buffer
+        (erase-buffer)
+        (insert "Running rsync...\n"))
+
+      (defun rsync-process-filter (proc string)
+        (with-current-buffer (process-buffer proc)
+          (goto-char (point-max))
+          (insert string)
+          (goto-char (point-max))
+          (while (re-search-backward "\r" nil t)
+            (replace-match "\n" nil nil))))
+
+      (make-process
+       :name "dired-rsync"
+       :buffer buffer
+       :command command
+       :filter 'rsync-process-filter
+       :sentinel
+       (lambda (_proc event)
+         (when (string-match-p "finished" event)
+           (with-current-buffer buffer
+             (goto-char (point-max))
+             (insert "\n* rsync done *\n"))
+           (dired-revert)))
+       :stderr buffer)
+
+      (display-buffer buffer)
+      (message "rsync started...")))
+
+
+  (defun emacs-solo/window-dired-vc-root-left (&optional directory-path)
+    "Creates *Dired-Side* like an IDE side explorer"
+    (interactive)
+    (add-hook 'dired-mode-hook 'dired-hide-details-mode)
+
+    (let ((dir (if directory-path
+                   (dired-noselect directory-path)
+                 (if (eq (vc-root-dir) nil)
+                     (dired-noselect default-directory)
+                   (dired-noselect (vc-root-dir))))))
+
+      (display-buffer-in-side-window
+       dir `((side . left)
+             (slot . 0)
+             (window-width . 30)
+             (window-parameters . ((no-other-window . t)
+                                   (no-delete-other-windows . t)
+                                   (mode-line-format . (" "
+                                                        "%b"))))))
+      (with-current-buffer dir
+        (let ((window (get-buffer-window dir)))
+          (when window
+            (select-window window)
+            (rename-buffer "*Dired-Side*")
+            )))))
+
+  (defun emacs-solo/window-dired-open-directory ()
+    "Open the current directory in *Dired-Side* side window."
+    (interactive)
+    (emacs-solo/window-dired-vc-root-left (dired-get-file-for-visit)))
+
+  (defun emacs-solo/window-dired-open-directory-back ()
+    "Open the parent directory in *Dired-Side* side window and refresh it."
+    (interactive)
+    (emacs-solo/window-dired-vc-root-left "../")
+    (when (get-buffer "*Dired-Side*")
+      (with-current-buffer "*Dired-Side*"
+        (revert-buffer t t))))
+
+  (eval-after-load 'dired
+    '(progn
+       ;; Users should navigate with p/n, enter new directories with =, go back with q,
+       ;; quit with several q's, only use - to access stuff up on the tree from inicial
+       ;; directory.
+       (define-key dired-mode-map (kbd "=") 'emacs-solo/window-dired-open-directory)
+       (define-key dired-mode-map (kbd "-") 'emacs-solo/window-dired-open-directory-back)
+
+       ;; A better "BACK" keybiding
+       (define-key dired-mode-map (kbd "b") 'dired-up-directory))))
+
+
+;;; WDIRED
+(use-package wdired
+  :ensure nil
+  :commands (wdired-change-to-wdired-mode)
+  :config
+  (setq wdired-allow-to-change-permissions t)
+  (setq wdired-create-parent-directories t))
+
+
 (use-package helpful
   :ensure t
   :bind
@@ -60,10 +205,10 @@
 (use-package ztree
   :ensure t)
 
-(use-package magit
-  :bind (("C-x g" . magit-status)
-         ("C-x C-g" . magit-status))
-  :ensure t)
+; (use-package magit
+;   :bind (("C-x g" . magit-status)
+;          ("C-x C-g" . magit-status))
+;   :ensure t)
 
 (use-package undo-fu
   :ensure t
@@ -80,14 +225,15 @@
 (use-package evil
   :ensure t
   :init
+  (setq select-enable-clipboard t)
   (setq evil-want-keybinding nil)
   (setq evil-want-fine-undo t)
+  
   (setq evil-undo-system 'undo-fu)
   :bind (:map evil-normal-state-map
               ("u" . undo-fu-only-undo)
               ("C-r" . undo-fu-only-redo))
   :config
-  (evil-mode 1)
   (global-unset-key (kbd "C-z"))
   (global-unset-key (kbd "C-S-z"))
   (define-key evil-normal-state-map (kbd "C-z") 'undo-fu-only-undo)
@@ -99,7 +245,8 @@
   (define-key evil-visual-state-map (kbd "C-z") 'undo-fu-only-undo)
   (define-key evil-visual-state-map (kbd "C-S-z") 'undo-fu-only-redo)
   (define-key evil-replace-state-map (kbd "C-z") 'undo-fu-only-undo)
-  (define-key evil-replace-state-map (kbd "C-S-z") 'undo-fu-only-redo))
+  (define-key evil-replace-state-map (kbd "C-S-z") 'undo-fu-only-redo)
+  (define-key evil-normal-state-map "Y" "y$"))
 
 (add-hook 'after-init-hook
           (lambda ()
@@ -129,7 +276,7 @@
   :bind (:map tempel-map
          ("TAB" . 'tempel-next))
   :init
-  (setq tempel-path "./tempel")
+  (setq tempel-path "~/.emacs.d/tempel")
   ;; Setup completion at point
   (defun tempel-setup-capf ()
     ;; Add the Tempel Capf to `completion-at-point-functions'.
@@ -194,8 +341,8 @@
 
 (use-package consult
   :ensure t
-  :bind (("C-x b" . consult-buffer)
-         ("C-x r b" . consult-bookmark)
+  :bind (("C-x b" . consult-bookmark)
+         ("C-x C-b" . consult-buffer)
          ("M-s d" . consult-find)
          ("M-s g" . consult-grep)
          ("M-s G" . consult-git-grep)
@@ -206,9 +353,5 @@
 (minimal-emacs-load-user-init "tex-config.el")
 
 (provide 'post-init)
-
-;; Local variables:
-;; byte-compile-warnings: (not obsolete free-vars)
-;; End:
 
 ;;; post-init.el ends here

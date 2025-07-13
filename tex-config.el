@@ -1,4 +1,4 @@
-;;; tex-config.el -*- lexical-binding: t; -*-
+;;; tex-config.el -*- no-byte-compile: t; lexical-binding: t; -*-
 
 (defvar my/latex-colors
   '((blue         . "#82aaff")         ; Primary blue (commands, sectioning)
@@ -315,18 +315,19 @@
   :ensure auctex
   :mode ("\\.tex\\'" . LaTeX-mode)
   :init
-  (setq TeX-auto-save t
+  (setq TeX-engine 'xetex
+        TeX-PDF-mode t
+        TeX-view-program-selection '((output-pdf "Zathura"))
+        TeX-view-program-list '(("Zathura" "zathura --synctex-forward %n:0:%b %o")))
+  :config
+  (setq TeX-auto-save nil
         ;;TeX-auto-local (expand-file-name ".auctex-auto/" user-emacs-directory)
-        TeX-parse-self t
+        TeX-parse-self nil
         TeX-save-query nil
         TeX-master nil
         TeX-show-compilation nil
-        TeX-engine 'xetex
-        TeX-PDF-mode t
         TeX-clean-confirm nil
         ;;TeX-output-dir "build"
-        TeX-view-program-selection '((output-pdf "Zathura"))
-        TeX-view-program-list '(("Zathura" "zathura --synctex-forward %n:0:%b %o"))
         TeX-command-extra-options "--shell-escape"
         TeX-command-list
         '(("LaTeXMk"
@@ -342,19 +343,6 @@
            TeX-run-command nil t
            :help "Delete auxiliary files")
           ("View" "%V" TeX-run-discard-or-function t t :help "Run Viewer"))
-        ;; '(("LaTeXMk"
-        ;;    "distrobox enter fedora -- latexmk %(latexmk-out) %(file-line-error) %(output-dir) %`%(extraopts) %S%(mode)%' %t"
-        ;;    TeX-run-TeX nil
-        ;;    (LaTeX-mode docTeX-mode)
-        ;;    :help "Run LaTeXMk")
-        ;;   ("Asymptote"
-        ;;    "distrobox enter fedora -- latexmk %(latexmk-out) %(file-line-error) %(output-dir) %`%(extraopts) %S%(mode)%' %t && distrobox enter fedora -- asy %s-*.asy && distrobox enter fedora -- latexmk -g %(latexmk-out) %(file-line-error) %(output-dir) %`%(extraopts) %S%(mode)%' %t"
-        ;;    TeX-run-command nil t
-        ;;    :help "Run LaTeXMk and Asymptote")
-        ;;   ("Clean" "distrobox enter fedora -- latexmk -c && rm -f *.synctex.gz *.asy *.pre"
-        ;;    TeX-run-command nil t
-        ;;    :help "Delete auxiliary files")
-        ;;   ("View" "%V" TeX-run-discard-or-function t t :help "Run Viewer"))
         )
 
   (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
@@ -390,9 +378,5 @@
   )
 
 (provide 'tex-config)
-
-;; Local variables:
-;; byte-compile-warnings: (not obsolete free-vars)
-;; End:
 
 ;;; post-init.el ends here

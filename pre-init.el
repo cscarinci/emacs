@@ -1,4 +1,4 @@
-;;; pre-init.el -*- lexical-binding: t; -*-
+;;; pre-init.el -*- no-byte-compile: t; lexical-binding: t; -*-
 
 (use-package modus-themes
   :ensure nil
@@ -100,9 +100,5 @@
                        )))
 
 (provide 'pre-init)
-
-;; Local variables:
-;; byte-compile-warnings: (not obsolete free-vars)
-;; End:
 
 ;;; pre-init.el ends here

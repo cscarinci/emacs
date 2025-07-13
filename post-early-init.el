@@ -1,4 +1,4 @@
-;;; post-early-init.el -*- lexical-binding: t; -*-
+;;; post-early-init.el -*- no-byte-compile: t; lexical-binding: t; -*-
 
 (setq custom-file (expand-file-name "custom.el" minimal-emacs-var-dir))
 
@@ -9,9 +9,5 @@
       (expand-file-name "themes/" minimal-emacs-var-dir))
 
 (provide 'post-early-init)
-
-;; Local variables:
-;; byte-compile-warnings: (not obsolete free-vars)
-;; End:
 
 ;;; post-early-init.el ends here
