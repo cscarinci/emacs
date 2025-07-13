@@ -4,7 +4,7 @@
 ;; URL: https://github.com/jamescherti/minimal-emacs.d
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: maint
-;; Version: 1.2.1
+;; Version: 1.3.0
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
@@ -429,6 +429,7 @@ this stage of initialization."
   (push '(tool-bar-lines . 0) default-frame-alist)
   (setq tool-bar-mode nil))
 
+(setq default-frame-scroll-bars 'right)
 (push '(vertical-scroll-bars) default-frame-alist)
 (push '(horizontal-scroll-bars) default-frame-alist)
 (setq scroll-bar-mode nil)
