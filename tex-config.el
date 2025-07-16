@@ -347,6 +347,9 @@
 
   (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 
+  (add-hook 'LaTeX-mode-hook #'outline-minor-mode)
+  (add-hook 'LaTeX-mode-hook #'centered-cursor-mode)
+
   (defun my/TeX-compile ()
     (interactive)
     (TeX-command "LaTeXMk" 'TeX-master-file))
@@ -376,6 +379,18 @@
   ;; :config
   ;; (server-mode t)
   )
+
+(use-package bicycle
+  :ensure t
+  :after outline
+  :bind (:map outline-minor-mode-map
+              ([C-tab] . bicycle-cycle)
+              ([backtab] . bicycle-cycle-global)))
+
+(use-package citar
+  :ensure t
+  :custom
+  (citar-bibliography '("~/.repos/biblio/references.bib")))
 
 (provide 'tex-config)
 

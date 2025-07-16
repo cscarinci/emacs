@@ -42,10 +42,7 @@
 ;;       fast-but-imprecise-scrolling t)
 
 (use-package centered-cursor-mode
-  :demand
-  :config
-  ;; Optional, enables centered-cursor-mode in all buffers.
-  (global-centered-cursor-mode))
+  :demand t)
 
 (use-package which-key
   :config
@@ -194,7 +191,6 @@
   (setq wdired-allow-to-change-permissions t)
   (setq wdired-create-parent-directories t))
 
-
 (use-package helpful
   :ensure t
   :bind
@@ -204,6 +200,27 @@
 
 (use-package ztree
   :ensure t)
+
+(use-package eat
+  :config
+  (setq explicit-shell-file-name "/usr/bin/zsh")
+  :bind ("C-c C-t" . eat)
+  :hook ('eshell-load-hook #'eat-eshell-mode))
+(use-package popper
+  :ensure t ; or :straight t
+  :bind (("C-`"   . popper-toggle)
+         ("M-`"   . popper-cycle)
+         ("C-M-`" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "\\*eat\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          help-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))                ; For echo area hints
 
 ; (use-package magit
 ;   :bind (("C-x g" . magit-status)
@@ -341,13 +358,14 @@
 
 (use-package consult
   :ensure t
-  :bind (("C-x b" . consult-bookmark)
-         ("C-x C-b" . consult-buffer)
+  :bind (("C-x b" . consult-buffer)
+         ("C-x C-b" . consult-project-buffer)
          ("M-s d" . consult-find)
          ("M-s g" . consult-grep)
          ("M-s G" . consult-git-grep)
          ("M-s r" . consult-ripgrep)
-         ("M-s l" . consult-line)))
+         ("M-s l" . consult-line)
+         ("C-s" . consult-line)))
 
 (minimal-emacs-load-user-init "org-config.el")
 (minimal-emacs-load-user-init "tex-config.el")
